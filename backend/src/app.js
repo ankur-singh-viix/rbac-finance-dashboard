@@ -4,12 +4,18 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const app = express();
+const userRoutes = require('./routes/userRoutes');
+
 
 // Middleware
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.use('/api/users', userRoutes);
+
 
 // Health check route
 app.get('/', (req, res) => {

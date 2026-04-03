@@ -50,6 +50,8 @@ app.use('/api/users', userRoutes);
 const recordRoutes = require('./routes/recordRoutes');
 app.use('/api/records', recordRoutes);
 
+const dashboardRoutes = require('./routes/dashboardRoutes');
+app.use('/api/dashboard', dashboardRoutes);
 
 // 404 handler
 app.use((req, res) => {

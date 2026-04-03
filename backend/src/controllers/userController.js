@@ -1,55 +1,58 @@
 const { UserStore, ROLES } = require('../models/User');
+const { validateUserCreate, validateUserUpdate } = require('../utils/validate');
 
-// GET /api/users
 const getAllUsers = (req, res) => {
   const allUsers = UserStore.getAll().map(({ password, ...u }) => u);
-  res.json({ success: true, data: allUsers });
+  res.json({ success: true, count: allUsers.length, data: allUsers });
 };
 
-// GET /api/users/:id
 const getUserById = (req, res) => {
   const user = UserStore.findById(req.params.id);
-  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+  if (!user)
+    return res.status(404).json({ success: false, message: 'User not found' });
   const { password, ...safe } = user;
   res.json({ success: true, data: safe });
 };
 
-// POST /api/users
 const createUser = (req, res) => {
-  const { name, email, password, role } = req.body;
+  const errors = validateUserCreate(req.body);
+  if (errors.length)
+    return res.status(400).json({ success: false, message: 'Validation failed', errors });
 
-  if (!name || !email || !password)
-    return res.status(400).json({ success: false, message: 'name, email, and password are required' });
-
-  if (role && !Object.values(ROLES).includes(role))
-    return res.status(400).json({ success: false, message: `role must be one of: ${Object.values(ROLES).join(', ')}` });
-
-  if (UserStore.findByEmail(email))
+  if (UserStore.findByEmail(req.body.email))
     return res.status(409).json({ success: false, message: 'Email already in use' });
 
+  const { name, email, password, role } = req.body;
   const user = UserStore.create({ name, email, password, role });
   const { password: _, ...safe } = user;
   res.status(201).json({ success: true, data: safe });
 };
 
-// PATCH /api/users/:id
 const updateUser = (req, res) => {
-  const { role, isActive, name } = req.body;
+  const errors = validateUserUpdate(req.body);
+  if (errors.length)
+    return res.status(400).json({ success: false, message: 'Validation failed', errors });
 
-  if (role && !Object.values(ROLES).includes(role))
-    return res.status(400).json({ success: false, message: `Invalid role` });
+  // Prevent admin from deactivating their own account
+  if (req.body.isActive === false && req.params.id === req.user.id)
+    return res.status(400).json({ success: false, message: 'You cannot deactivate your own account' });
 
-  const updated = UserStore.update(req.params.id, { name, role, isActive });
-  if (!updated) return res.status(404).json({ success: false, message: 'User not found' });
+  const updated = UserStore.update(req.params.id, req.body);
+  if (!updated)
+    return res.status(404).json({ success: false, message: 'User not found' });
 
   const { password, ...safe } = updated;
   res.json({ success: true, data: safe });
 };
 
-// DELETE /api/users/:id
 const deleteUser = (req, res) => {
+  if (req.params.id === req.user.id)
+    return res.status(400).json({ success: false, message: 'You cannot delete your own account' });
+
   const deleted = UserStore.delete(req.params.id);
-  if (!deleted) return res.status(404).json({ success: false, message: 'User not found' });
+  if (!deleted)
+    return res.status(404).json({ success: false, message: 'User not found' });
+
   res.json({ success: true, message: 'User deleted' });
 };
 

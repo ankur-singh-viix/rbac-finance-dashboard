@@ -4,20 +4,14 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const app = express();
-const userRoutes = require('./routes/userRoutes');
 
-
-// Middleware
+// Middleware — MUST come before any routes
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api/users', userRoutes);
-
-
-// Health check route
+// Health check
 app.get('/', (req, res) => {
   res.json({
     status: 'ok',
@@ -25,6 +19,33 @@ app.get('/', (req, res) => {
     version: '1.0.0',
   });
 });
+
+// Temporary login stub — replaced by JWT in Step 8
+const { UserStore } = require('./models/User');
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ success: false, message: 'email and password required' });
+
+  const user = UserStore.findByEmail(email);
+  if (!user || user.password !== password)
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+  const { password: _, ...safe } = user;
+  res.json({ success: true, data: { userId: user.id, user: safe } });
+});
+
+// Seed a default admin on startup (in-memory only)
+UserStore.create({
+  name: 'Super Admin',
+  email: 'admin@test.com',
+  password: 'admin123',
+  role: 'admin',
+});
+
+// Routes
+const userRoutes = require('./routes/userRoutes');
+app.use('/api/users', userRoutes);
 
 // 404 handler
 app.use((req, res) => {

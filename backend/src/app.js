@@ -47,6 +47,10 @@ UserStore.create({
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/users', userRoutes);
 
+const recordRoutes = require('./routes/recordRoutes');
+app.use('/api/records', recordRoutes);
+
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });

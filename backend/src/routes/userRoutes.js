@@ -7,16 +7,15 @@ const {
   updateUser,
   deleteUser,
 } = require('../controllers/userController');
-const { authenticate } = require('../middleware/auth');
+const { protect } = require('../middleware/jwtAuth');
 const { requireRole } = require('../middleware/rbac');
 
-// All user routes require authentication
-router.use(authenticate);
+router.use(protect);
 
-router.get('/',       requireRole('analyst'), getAllUsers);   // analyst+
-router.get('/:id',    requireRole('analyst'), getUserById);  // analyst+
-router.post('/',      requireRole('admin'),   createUser);   // admin only
-router.patch('/:id',  requireRole('admin'),   updateUser);   // admin only
-router.delete('/:id', requireRole('admin'),   deleteUser);   // admin only
+router.get('/',       requireRole('analyst'), getAllUsers);
+router.get('/:id',    requireRole('analyst'), getUserById);
+router.post('/',      requireRole('admin'),   createUser);
+router.patch('/:id',  requireRole('admin'),   updateUser);
+router.delete('/:id', requireRole('admin'),   deleteUser);
 
 module.exports = router;

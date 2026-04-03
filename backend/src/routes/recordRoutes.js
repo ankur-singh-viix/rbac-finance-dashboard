@@ -7,10 +7,10 @@ const {
   updateRecord,
   deleteRecord,
 } = require('../controllers/recordController');
-const { authenticate } = require('../middleware/auth');
+const { protect } = require('../middleware/jwtAuth');
 const { requireRole } = require('../middleware/rbac');
 
-router.use(authenticate);
+router.use(protect);
 
 router.get('/',       requireRole('viewer'),  getAllRecords);
 router.get('/:id',    requireRole('viewer'),  getRecordById);
@@ -18,4 +18,4 @@ router.post('/',      requireRole('analyst'), createRecord);
 router.patch('/:id',  requireRole('analyst'), updateRecord);
 router.delete('/:id', requireRole('admin'),   deleteRecord);
 
-module.exports = router; 
+module.exports = router;

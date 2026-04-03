@@ -1,6 +1,13 @@
-// Database config placeholder — will be wired in Step 7
+const mongoose = require('mongoose');
+
 const connectDB = async () => {
-  console.log('DB connection will be configured in Step 7');
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`MongoDB connected: ${conn.connection.host}`);
+  } catch (err) {
+    console.error(`MongoDB connection error: ${err.message}`);
+    process.exit(1);
+  }
 };
 
 module.exports = connectDB;

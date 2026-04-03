@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require('uuid');
+const mongoose = require('mongoose');
 
 const RECORD_TYPES = {
   INCOME: 'income',
@@ -17,53 +17,41 @@ const CATEGORIES = [
   'other',
 ];
 
-// In-memory store — replaced by MongoDB in Step 7
-const records = [];
-
-class Record {
-  constructor({ amount, type, category, date, notes, createdBy }) {
-    this.id = uuidv4();
-    this.amount = parseFloat(amount);
-    this.type = type;
-    this.category = category;
-    this.date = date ? new Date(date).toISOString() : new Date().toISOString();
-    this.notes = notes || '';
-    this.createdBy = createdBy; // user id
-    this.createdAt = new Date().toISOString();
-    this.updatedAt = new Date().toISOString();
-  }
-}
-
-const RecordStore = {
-  getAll: () => records,
-
-  findById: (id) => records.find((r) => r.id === id),
-
-  create: (data) => {
-    const record = new Record(data);
-    records.push(record);
-    return record;
+const recordSchema = new mongoose.Schema(
+  {
+    amount: {
+      type: Number,
+      required: [true, 'Amount is required'],
+      min: [0.01, 'Amount must be positive'],
+    },
+    type: {
+      type: String,
+      enum: Object.values(RECORD_TYPES),
+      required: [true, 'Type is required'],
+    },
+    category: {
+      type: String,
+      enum: CATEGORIES,
+      required: [true, 'Category is required'],
+    },
+    date: {
+      type: Date,
+      default: Date.now,
+    },
+    notes: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
   },
+  { timestamps: true }
+);
 
-  update: (id, updates) => {
-    const idx = records.findIndex((r) => r.id === id);
-    if (idx === -1) return null;
-    const allowed = ['amount', 'type', 'category', 'date', 'notes'];
-    allowed.forEach((key) => {
-      if (updates[key] !== undefined) records[idx][key] = key === 'amount'
-        ? parseFloat(updates[key])
-        : updates[key];
-    });
-    records[idx].updatedAt = new Date().toISOString();
-    return records[idx];
-  },
+const Record = mongoose.model('Record', recordSchema);
 
-  delete: (id) => {
-    const idx = records.findIndex((r) => r.id === id);
-    if (idx === -1) return false;
-    records.splice(idx, 1);
-    return true;
-  },
-};
-
-module.exports = { RECORD_TYPES, CATEGORIES, RecordStore };
+module.exports = { RECORD_TYPES, CATEGORIES, Record };

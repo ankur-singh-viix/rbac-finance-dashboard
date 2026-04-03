@@ -10,13 +10,12 @@ const {
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 
-// All record routes require authentication
 router.use(authenticate);
 
-router.get('/',       requireRole('viewer'),  getAllRecords);   // all roles
-router.get('/:id',    requireRole('viewer'),  getRecordById);  // all roles
-router.post('/',      requireRole('analyst'), createRecord);   // analyst+
-router.patch('/:id',  requireRole('analyst'), updateRecord);   // analyst+
-router.delete('/:id', requireRole('admin'),   deleteRecord);   // admin only
+router.get('/',       requireRole('viewer'),  getAllRecords);
+router.get('/:id',    requireRole('viewer'),  getRecordById);
+router.post('/',      requireRole('analyst'), createRecord);
+router.patch('/:id',  requireRole('analyst'), updateRecord);
+router.delete('/:id', requireRole('admin'),   deleteRecord);
 
-module.exports = router;
+module.exports = router; 

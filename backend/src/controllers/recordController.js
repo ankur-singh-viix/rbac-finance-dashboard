@@ -2,7 +2,57 @@ const { RecordStore, RECORD_TYPES, CATEGORIES } = require('../models/Record');
 
 // GET /api/records
 const getAllRecords = (req, res) => {
-  const records = RecordStore.getAll();
+  const { type, category, startDate, endDate, minAmount, maxAmount } = req.query;
+
+  let records = RecordStore.getAll();
+
+  if (type) {
+    if (!Object.values(RECORD_TYPES).includes(type))
+      return res.status(400).json({
+        success: false,
+        message: `type must be one of: ${Object.values(RECORD_TYPES).join(', ')}`,
+      });
+    records = records.filter((r) => r.type === type);
+  }
+
+  if (category) {
+    if (!CATEGORIES.includes(category))
+      return res.status(400).json({
+        success: false,
+        message: `category must be one of: ${CATEGORIES.join(', ')}`,
+      });
+    records = records.filter((r) => r.category === category);
+  }
+
+  if (startDate) {
+    const start = new Date(startDate);
+    if (isNaN(start))
+      return res.status(400).json({ success: false, message: 'Invalid startDate' });
+    records = records.filter((r) => new Date(r.date) >= start);
+  }
+
+  if (endDate) {
+    const end = new Date(endDate);
+    if (isNaN(end))
+      return res.status(400).json({ success: false, message: 'Invalid endDate' });
+    end.setHours(23, 59, 59, 999);
+    records = records.filter((r) => new Date(r.date) <= end);
+  }
+
+  if (minAmount) {
+    const min = parseFloat(minAmount);
+    if (isNaN(min))
+      return res.status(400).json({ success: false, message: 'Invalid minAmount' });
+    records = records.filter((r) => r.amount >= min);
+  }
+
+  if (maxAmount) {
+    const max = parseFloat(maxAmount);
+    if (isNaN(max))
+      return res.status(400).json({ success: false, message: 'Invalid maxAmount' });
+    records = records.filter((r) => r.amount <= max);
+  }
+
   res.json({ success: true, count: records.length, data: records });
 };
 
@@ -18,7 +68,6 @@ const getRecordById = (req, res) => {
 const createRecord = (req, res) => {
   const { amount, type, category, date, notes } = req.body;
 
-  // Validate required fields
   if (amount === undefined || !type || !category)
     return res.status(400).json({
       success: false,
